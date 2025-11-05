@@ -7,9 +7,10 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
+    "ast": "tsx scripts/generate-ast.ts src/parsing && npm run lint",
     "build": "tsc",
     "clean": "rm -rf dist/",
-    "lint": "eslint --max-warnings 0",
+    "lint": "eslint --fix --max-warnings 0",
     "start": "tsx src/app.ts",
     "prepare": "husky"
   },
