@@ -132,7 +132,7 @@ export class Scanner {
     if (this.isAtEnd()) {
       return false;
     }
-    if (this.source.charAt(this.current) != char) {
+    if (this.source.charAt(this.current) !== char) {
       return false;
     }
 
@@ -157,7 +157,7 @@ export class Scanner {
 
   private scanSlash(): void {
     if (this.advanceIfMatch('/')) {
-      while (this.peek() != '\n' && !this.isAtEnd()) {
+      while (this.peek() !== '\n' && !this.isAtEnd()) {
         this.advance();
       }
       return;
@@ -166,8 +166,8 @@ export class Scanner {
   }
 
   private scanString(): void {
-    while (this.peek() != '"' && !this.isAtEnd()) {
-      if (this.peek() == '\n') {
+    while (this.peek() !== '"' && !this.isAtEnd()) {
+      if (this.peek() === '\n') {
         this.line++;
       }
       this.advance();
@@ -189,7 +189,7 @@ export class Scanner {
       this.advance();
     }
 
-    if (this.peek() == '.' && this.isDigit(this.peekNext())) {
+    if (this.peek() === '.' && this.isDigit(this.peekNext())) {
       this.advance();
       while (this.isDigit(this.peek())) {
         this.advance();
@@ -214,7 +214,7 @@ export class Scanner {
     return (
       (char >= 'a' && char <= 'z') ||
       (char >= 'A' && char <= 'Z') ||
-      char == '_'
+      char === '_'
     );
   }
 

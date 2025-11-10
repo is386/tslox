@@ -12,7 +12,7 @@ function main(): void {
   if (args.length > 3) {
     console.log('Usage: tslox [script]');
     exit(64);
-  } else if (args.length == 3) {
+  } else if (args.length === 3) {
     runFile(args[2]);
   } else {
     runPrompt();

@@ -5,7 +5,7 @@ let path: string;
 
 function main(): void {
   const args = process.argv;
-  if (args.length != 3) {
+  if (args.length !== 3) {
     console.log('Usage: generate-ast <output_directory>');
     exit(64);
   }

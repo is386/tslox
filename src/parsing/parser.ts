@@ -130,7 +130,7 @@ export class Parser {
     this.advance();
 
     while (!this.isAtEnd()) {
-      if (this.peekPrevious().type == TokenType.SEMICOLON) return;
+      if (this.peekPrevious().type === TokenType.SEMICOLON) return;
 
       switch (this.peek().type) {
         case TokenType.CLASS:
@@ -159,7 +159,7 @@ export class Parser {
   }
 
   private check(type: TokenType): boolean {
-    return this.isAtEnd() ? false : this.peek().type == type;
+    return this.isAtEnd() ? false : this.peek().type === type;
   }
 
   private advance(): Token {
@@ -170,7 +170,7 @@ export class Parser {
   }
 
   private isAtEnd(): boolean {
-    return this.peek().type == TokenType.EOF;
+    return this.peek().type === TokenType.EOF;
   }
 
   private peek(): Token {
