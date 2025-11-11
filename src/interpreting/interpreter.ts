@@ -46,6 +46,9 @@ export class Interpreter implements Visitor<unknown> {
 
       case TokenType.SLASH:
         this.checkNumberOperands(expr.operator, left, right);
+        if ((right as number) === 0) {
+          throw new RuntimeError(expr.operator, 'Divide by zero.');
+        }
         return (left as number) / (right as number);
 
       case TokenType.STAR:
