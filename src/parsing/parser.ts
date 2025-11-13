@@ -2,6 +2,7 @@ import { Token } from '../scanning/token';
 import { BinaryExpr, Expr, GroupingExpr, LiteralExpr, UnaryExpr } from './expr';
 import { TokenType } from '../scanning/token-type';
 import { logError } from '../error';
+import { ExpressionStmt, PrintStmt, Stmt } from './stmt';
 
 export class Parser {
   private tokens: Token[];
@@ -11,16 +12,35 @@ export class Parser {
     this.tokens = tokens;
   }
 
-  parse(): Expr | null {
-    try {
-      return this.expression();
-    } catch {
-      return null;
+  parse(): Stmt[] {
+    const stmts = [];
+    while(!this.isAtEnd()) {
+      stmts.push(this.statement())
     }
+
+    return stmts
   }
 
   private expression(): Expr {
     return this.equality();
+  }
+
+  private statement(): Stmt {
+    if (this.match(TokenType.PRINT)) return this.printStatement();
+
+    return this.expressionStatement();
+  }
+
+  printStatement(): Stmt {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+    return new PrintStmt(expr);
+  }
+
+  expressionStatement(): Stmt {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+    return new ExpressionStmt(expr);    
   }
 
   private equality(): Expr {
