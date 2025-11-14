@@ -11,13 +11,18 @@ function main(): void {
   }
 
   defineAst(args[2], 'Expr', [
-    'Binary   | left: Expr, operator: Token, right: Expr',
-    'Grouping | expression: Expr',
-    'Literal  | value: unknown',
-    'Unary    | operator: Token, right: Expr',
+    'Binary   # left: Expr, operator: Token, right: Expr',
+    'Grouping # expression: Expr',
+    'Literal  # value: unknown',
+    'Unary    # operator: Token, right: Expr',
+    'Variable # name: Token',
   ]);
 
-  defineAst(args[2], 'Stmt', ['Expression | expr: Expr', 'Print | expr: Expr']);
+  defineAst(args[2], 'Stmt', [
+    'Expression # expr: Expr',
+    'Print      # expr: Expr',
+    'VarDecl    # name: Token, initializer: Expr | null',
+  ]);
 }
 
 function defineAst(
@@ -28,14 +33,10 @@ function defineAst(
   path = `${outputDir}/${baseName.toLowerCase()}.ts`;
 
   // Imports
-  if (baseName === 'Expr') {
-    writeFileSync(
-      path,
-      "import { Token } from '../scanning/token';\n\n",
-      'utf8'
-    );
-  } else if (baseName == 'Stmt') {
-    writeFileSync(path, "import { Expr } from './expr';\n\n", 'utf8');
+  writeFileSync(path, "import { Token } from '../scanning/token';\n", 'utf8');
+  if (baseName == 'Stmt') {
+    writeLine("import { Expr } from './expr';");
+    writeLine();
   }
 
   // Visitor
@@ -44,21 +45,21 @@ function defineAst(
 
   // Base Expression Class
   writeLine(`export abstract class ${baseName} {`);
-  writeLine(`abstract accept<R>(visitor: Visitor<R>): R;`);
+  writeLine(`abstract accept<R>(visitor: ${baseName}Visitor<R>): R;`);
   writeLine('}');
   writeLine();
 
   types.forEach((type) => {
-    const className = type.split('|')[0].trim();
-    const fields = type.split('|')[1].trim();
+    const className = type.split('#')[0].trim();
+    const fields = type.split('#')[1].trim();
     defineType(baseName, className, fields);
   });
 }
 
 function defineVisitor(baseName: string, types: string[]): void {
-  writeLine('export interface Visitor<R> {');
+  writeLine(`export interface ${baseName}Visitor<R> {`);
   types.forEach((type) => {
-    const typeName = type.split('|')[0].trim();
+    const typeName = type.split('#')[0].trim();
     writeLine(
       `visit${typeName}${baseName}(${baseName.toLowerCase()}: ${typeName}${baseName}): R;`
     );
@@ -92,7 +93,7 @@ function defineType(
   writeLine();
 
   // Visitor Pattern
-  writeLine(`accept<R>(visitor: Visitor<R>): R {`);
+  writeLine(`accept<R>(visitor: ${baseName}Visitor<R>): R {`);
   writeLine(`return visitor.visit${className}${baseName}(this);`);
   writeLine('}');
 

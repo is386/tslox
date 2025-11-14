@@ -5,17 +5,19 @@ import {
   GroupingExpr,
   LiteralExpr,
   UnaryExpr,
-  Visitor,
+  ExprVisitor,
 } from '../parsing/expr';
+import { ExpressionStmt, PrintStmt, Stmt, StmtVisitor } from '../parsing/stmt';
 import { Token } from '../scanning/token';
 import { TokenType } from '../scanning/token-type';
 import { RuntimeError } from './runtime-error';
 
-export class Interpreter implements Visitor<unknown> {
-  interpret(expr: Expr): void {
+export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
+  interpret(stmts: Stmt[]): void {
     try {
-      const value = this.evaluate(expr);
-      console.log(JSON.stringify(value));
+      stmts.forEach((s) => {
+        this.execute(s);
+      });
     } catch (e) {
       if (e instanceof RuntimeError) {
         logError(e.token.line, e.message);
@@ -96,6 +98,10 @@ export class Interpreter implements Visitor<unknown> {
     }
   }
 
+  private execute(stmt: Stmt): void {
+    stmt.accept(this);
+  }
+
   private evaluate(expr: Expr): unknown {
     return expr.accept(this);
   }
@@ -120,5 +126,14 @@ export class Interpreter implements Visitor<unknown> {
     if (typeof left !== 'number' || typeof right !== 'number') {
       throw new RuntimeError(operator, 'Operands must be numbers.');
     }
+  }
+
+  visitExpressionStmt(stmt: ExpressionStmt): void {
+    this.evaluate(stmt.expr);
+  }
+
+  visitPrintStmt(stmt: PrintStmt): void {
+    const value = this.evaluate(stmt.expr);
+    console.log(JSON.stringify(value));
   }
 }

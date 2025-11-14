@@ -13,6 +13,6 @@ export function logError(
   message: string,
   where: string = ''
 ): void {
-  console.log(`[line ${line}] Error${where}: ${message}`);
+  console.log(`[line ${line}] Error ${where}: ${message}`);
   error = true;
 }

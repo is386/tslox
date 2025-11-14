@@ -4,10 +4,10 @@ import {
   GroupingExpr,
   LiteralExpr,
   UnaryExpr,
-  Visitor,
+  ExprVisitor,
 } from './expr';
 
-export class AstPrinter implements Visitor<string> {
+export class AstPrinter implements ExprVisitor<string> {
   print(expr: Expr) {
     return expr.accept(this);
   }

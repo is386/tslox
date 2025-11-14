@@ -52,11 +52,11 @@ function run(source: string): void {
   const tokens = scanner.scanTokens();
 
   const parser = new Parser(tokens);
-  const expr = parser.parse();
+  const stmts = parser.parse();
 
-  if (hadError() || !expr) return;
+  if (hadError()) return;
 
-  interpreter.interpret(expr);
+  interpreter.interpret(stmts);
 }
 
 main();

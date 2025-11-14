@@ -1,14 +1,14 @@
 import { Token } from '../scanning/token';
-
-export interface Visitor<R> {
+export interface ExprVisitor<R> {
   visitBinaryExpr(expr: BinaryExpr): R;
   visitGroupingExpr(expr: GroupingExpr): R;
   visitLiteralExpr(expr: LiteralExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
+  visitVariableExpr(expr: VariableExpr): R;
 }
 
 export abstract class Expr {
-  abstract accept<R>(visitor: Visitor<R>): R;
+  abstract accept<R>(visitor: ExprVisitor<R>): R;
 }
 
 export class BinaryExpr extends Expr {
@@ -23,7 +23,7 @@ export class BinaryExpr extends Expr {
     this.right = right;
   }
 
-  accept<R>(visitor: Visitor<R>): R {
+  accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitBinaryExpr(this);
   }
 }
@@ -36,7 +36,7 @@ export class GroupingExpr extends Expr {
     this.expression = expression;
   }
 
-  accept<R>(visitor: Visitor<R>): R {
+  accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitGroupingExpr(this);
   }
 }
@@ -49,7 +49,7 @@ export class LiteralExpr extends Expr {
     this.value = value;
   }
 
-  accept<R>(visitor: Visitor<R>): R {
+  accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitLiteralExpr(this);
   }
 }
@@ -64,7 +64,20 @@ export class UnaryExpr extends Expr {
     this.right = right;
   }
 
-  accept<R>(visitor: Visitor<R>): R {
+  accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitUnaryExpr(this);
+  }
+}
+
+export class VariableExpr extends Expr {
+  name: Token;
+
+  constructor(name: Token) {
+    super();
+    this.name = name;
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitVariableExpr(this);
   }
 }
