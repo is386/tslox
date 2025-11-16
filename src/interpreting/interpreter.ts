@@ -26,6 +26,11 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   private environment = new Environment();
 
   interpret(stmts: Stmt[]): void {
+    if (stmts.length == 1 && stmts[0] instanceof ExpressionStmt) {
+      console.log(this.evaluate(stmts[0].expr));
+      return;
+    }
+
     try {
       stmts.forEach((s) => {
         this.execute(s);
