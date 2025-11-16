@@ -10,6 +10,7 @@ import {
   AssignmentExpr,
 } from '../parsing/expr';
 import {
+  BlockStmt,
   ExpressionStmt,
   PrintStmt,
   Stmt,
@@ -119,6 +120,28 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     return this.environment.get(expr.name);
   }
 
+  visitExpressionStmt(stmt: ExpressionStmt): void {
+    this.evaluate(stmt.expr);
+  }
+
+  visitPrintStmt(stmt: PrintStmt): void {
+    const value = this.evaluate(stmt.expr);
+    console.log(JSON.stringify(value));
+  }
+
+  visitBlockStmt(stmt: BlockStmt): void {
+    this.executeBlock(stmt.stmts, new Environment(this.environment));
+  }
+
+  visitVarDeclStmt(stmt: VarDeclStmt): void {
+    let value = null;
+    if (stmt.initializer != null) {
+      value = this.evaluate(stmt.initializer);
+    }
+
+    this.environment.define(stmt.name.lexeme, value);
+  }
+
   private execute(stmt: Stmt): void {
     stmt.accept(this);
   }
@@ -149,21 +172,16 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     }
   }
 
-  visitExpressionStmt(stmt: ExpressionStmt): void {
-    this.evaluate(stmt.expr);
-  }
+  private executeBlock(stmts: Stmt[], environment: Environment): void {
+    const previous = this.environment;
 
-  visitPrintStmt(stmt: PrintStmt): void {
-    const value = this.evaluate(stmt.expr);
-    console.log(JSON.stringify(value));
-  }
-
-  visitVarDeclStmt(stmt: VarDeclStmt): void {
-    let value = null;
-    if (stmt.initializer != null) {
-      value = this.evaluate(stmt.initializer);
+    try {
+      this.environment = environment;
+      stmts.forEach((s) => {
+        this.execute(s);
+      });
+    } finally {
+      this.environment = previous;
     }
-
-    this.environment.define(stmt.name.lexeme, value);
   }
 }

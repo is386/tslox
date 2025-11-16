@@ -2,6 +2,7 @@ import { Token } from '../scanning/token';
 import { Expr } from './expr';
 
 export interface StmtVisitor<R> {
+  visitBlockStmt(stmt: BlockStmt): R;
   visitExpressionStmt(stmt: ExpressionStmt): R;
   visitPrintStmt(stmt: PrintStmt): R;
   visitVarDeclStmt(stmt: VarDeclStmt): R;
@@ -9,6 +10,19 @@ export interface StmtVisitor<R> {
 
 export abstract class Stmt {
   abstract accept<R>(visitor: StmtVisitor<R>): R;
+}
+
+export class BlockStmt extends Stmt {
+  stmts: Stmt[];
+
+  constructor(stmts: Stmt[]) {
+    super();
+    this.stmts = stmts;
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitBlockStmt(this);
+  }
 }
 
 export class ExpressionStmt extends Stmt {

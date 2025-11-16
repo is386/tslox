@@ -20,6 +20,7 @@ function main(): void {
   ]);
 
   defineAst(args[2], 'Stmt', [
+    'Block      # stmts: Stmt[]',
     'Expression # expr: Expr',
     'Print      # expr: Expr',
     'VarDecl    # name: Token, initializer: Expr | null',
