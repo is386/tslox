@@ -1,5 +1,6 @@
 import { Token } from '../scanning/token';
 import {
+  AssignmentExpr,
   BinaryExpr,
   Expr,
   GroupingExpr,
@@ -60,20 +61,38 @@ export class Parser {
     return this.expressionStatement();
   }
 
-  printStatement(): Stmt {
+  private printStatement(): Stmt {
     const expr = this.expression();
     this.consume(TokenType.SEMICOLON, "Expect ';' after value.");
     return new PrintStmt(expr);
   }
 
-  private expression(): Expr {
-    return this.equality();
-  }
-
-  expressionStatement(): Stmt {
+  private expressionStatement(): Stmt {
     const expr = this.expression();
     this.consume(TokenType.SEMICOLON, "Expect ';' after expression.");
     return new ExpressionStmt(expr);
+  }
+
+  private expression(): Expr {
+    return this.assignment();
+  }
+
+  private assignment(): Expr {
+    const expr = this.equality();
+
+    if (this.match(TokenType.EQUAL)) {
+      const equal = this.peekPrevious();
+      const value = this.assignment();
+
+      if (expr instanceof VariableExpr) {
+        const name = expr.name;
+        return new AssignmentExpr(name, value);
+      }
+
+      logError(equal.line, 'Invalid assignment target.');
+    }
+
+    return expr;
   }
 
   private equality(): Expr {

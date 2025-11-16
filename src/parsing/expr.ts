@@ -5,6 +5,7 @@ export interface ExprVisitor<R> {
   visitLiteralExpr(expr: LiteralExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
   visitVariableExpr(expr: VariableExpr): R;
+  visitAssignmentExpr(expr: AssignmentExpr): R;
 }
 
 export abstract class Expr {
@@ -79,5 +80,20 @@ export class VariableExpr extends Expr {
 
   accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitVariableExpr(this);
+  }
+}
+
+export class AssignmentExpr extends Expr {
+  name: Token;
+  value: Expr;
+
+  constructor(name: Token, value: Expr) {
+    super();
+    this.name = name;
+    this.value = value;
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitAssignmentExpr(this);
   }
 }

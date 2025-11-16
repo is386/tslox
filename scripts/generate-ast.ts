@@ -16,6 +16,7 @@ function main(): void {
     'Literal  # value: unknown',
     'Unary    # operator: Token, right: Expr',
     'Variable # name: Token',
+    'Assignment # name: Token, value: Expr',
   ]);
 
   defineAst(args[2], 'Stmt', [

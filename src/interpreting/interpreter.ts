@@ -6,13 +6,24 @@ import {
   LiteralExpr,
   UnaryExpr,
   ExprVisitor,
+  VariableExpr,
+  AssignmentExpr,
 } from '../parsing/expr';
-import { ExpressionStmt, PrintStmt, Stmt, StmtVisitor } from '../parsing/stmt';
+import {
+  ExpressionStmt,
+  PrintStmt,
+  Stmt,
+  StmtVisitor,
+  VarDeclStmt,
+} from '../parsing/stmt';
 import { Token } from '../scanning/token';
 import { TokenType } from '../scanning/token-type';
+import { Environment } from './environment';
 import { RuntimeError } from './runtime-error';
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
+  private environment = new Environment();
+
   interpret(stmts: Stmt[]): void {
     try {
       stmts.forEach((s) => {
@@ -98,6 +109,16 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     }
   }
 
+  visitAssignmentExpr(expr: AssignmentExpr): unknown {
+    const value = this.evaluate(expr.value);
+    this.environment.assign(expr.name, value);
+    return value;
+  }
+
+  visitVariableExpr(expr: VariableExpr): unknown {
+    return this.environment.get(expr.name);
+  }
+
   private execute(stmt: Stmt): void {
     stmt.accept(this);
   }
@@ -135,5 +156,14 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   visitPrintStmt(stmt: PrintStmt): void {
     const value = this.evaluate(stmt.expr);
     console.log(JSON.stringify(value));
+  }
+
+  visitVarDeclStmt(stmt: VarDeclStmt): void {
+    let value = null;
+    if (stmt.initializer != null) {
+      value = this.evaluate(stmt.initializer);
+    }
+
+    this.environment.define(stmt.name.lexeme, value);
   }
 }
