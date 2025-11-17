@@ -1,6 +1,7 @@
 import { Token } from '../scanning/token';
 export interface ExprVisitor<R> {
   visitBinaryExpr(expr: BinaryExpr): R;
+  visitLogicalExpr(expr: LogicalExpr): R;
   visitGroupingExpr(expr: GroupingExpr): R;
   visitLiteralExpr(expr: LiteralExpr): R;
   visitUnaryExpr(expr: UnaryExpr): R;
@@ -26,6 +27,23 @@ export class BinaryExpr extends Expr {
 
   accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitBinaryExpr(this);
+  }
+}
+
+export class LogicalExpr extends Expr {
+  left: Expr;
+  operator: Token;
+  right: Expr;
+
+  constructor(left: Expr, operator: Token, right: Expr) {
+    super();
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitLogicalExpr(this);
   }
 }
 

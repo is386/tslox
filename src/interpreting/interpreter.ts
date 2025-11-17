@@ -8,10 +8,12 @@ import {
   ExprVisitor,
   VariableExpr,
   AssignmentExpr,
+  LogicalExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
   ExpressionStmt,
+  IfStmt,
   PrintStmt,
   Stmt,
   StmtVisitor,
@@ -120,6 +122,18 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     return this.environment.get(expr.name);
   }
 
+  visitLogicalExpr(expr: LogicalExpr): unknown {
+    const left = this.evaluate(expr.left);
+
+    if (expr.operator.type === TokenType.OR) {
+      if (this.isTruthy(left)) return left;
+    } else {
+      if (!this.isTruthy(left)) return left;
+    }
+
+    return this.evaluate(expr.right);
+  }
+
   visitExpressionStmt(stmt: ExpressionStmt): void {
     this.evaluate(stmt.expr);
   }
@@ -140,6 +154,14 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     }
 
     this.environment.define(stmt.name.lexeme, value);
+  }
+
+  visitIfStmt(stmt: IfStmt): void {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch);
+    } else if (stmt.elseBranch) {
+      this.execute(stmt.elseBranch);
+    }
   }
 
   private execute(stmt: Stmt): void {

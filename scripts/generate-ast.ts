@@ -11,11 +11,12 @@ function main(): void {
   }
 
   defineAst(args[2], 'Expr', [
-    'Binary   # left: Expr, operator: Token, right: Expr',
-    'Grouping # expression: Expr',
-    'Literal  # value: unknown',
-    'Unary    # operator: Token, right: Expr',
-    'Variable # name: Token',
+    'Binary     # left: Expr, operator: Token, right: Expr',
+    'Logical    # left: Expr, operator: Token, right: Expr',
+    'Grouping   # expression: Expr',
+    'Literal    # value: unknown',
+    'Unary      # operator: Token, right: Expr',
+    'Variable   # name: Token',
     'Assignment # name: Token, value: Expr',
   ]);
 
@@ -24,6 +25,7 @@ function main(): void {
     'Expression # expr: Expr',
     'Print      # expr: Expr',
     'VarDecl    # name: Token, initializer: Expr | null',
+    'If         # condition: Expr, thenBranch: Stmt, elseBranch: Stmt | null',
   ]);
 }
 
