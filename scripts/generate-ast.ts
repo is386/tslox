@@ -26,6 +26,7 @@ function main(): void {
     'Print      # expr: Expr',
     'VarDecl    # name: Token, initializer: Expr | null',
     'If         # condition: Expr, thenBranch: Stmt, elseBranch: Stmt | null',
+    'While      # condition: Expr, body: Stmt',
   ]);
 }
 

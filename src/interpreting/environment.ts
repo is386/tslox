@@ -14,7 +14,7 @@ export class Environment {
   }
 
   get(name: Token): unknown {
-    if (this.values[name.lexeme]) {
+    if (this.exists(name)) {
       return this.values[name.lexeme];
     }
 
@@ -26,7 +26,7 @@ export class Environment {
   }
 
   assign(name: Token, value: unknown): void {
-    if (this.values[name.lexeme]) {
+    if (this.exists(name)) {
       this.values[name.lexeme] = value;
       return;
     }
@@ -37,5 +37,9 @@ export class Environment {
     }
 
     throw new RuntimeError(name, `Undefined variable "${name.lexeme}".`);
+  }
+
+  private exists(name: Token): boolean {
+    return Object.keys(this.values).includes(name.lexeme);
   }
 }
