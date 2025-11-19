@@ -9,6 +9,7 @@ import {
   VariableExpr,
   AssignmentExpr,
   LogicalExpr,
+  CallExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
@@ -23,10 +24,20 @@ import {
 import { Token } from '../scanning/token';
 import { TokenType } from '../scanning/token-type';
 import { Environment } from './environment';
+import { isLoxCallable, LoxCallable } from './lox-callable';
 import { RuntimeError } from './runtime-error';
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
-  private environment = new Environment();
+  private globals = new Environment();
+  private environment = this.globals;
+
+  constructor() {
+    this.globals.define('clock', {
+      arity: () => 0,
+      call: () => Date.now() / 1000,
+      toString: () => '<native fn>',
+    } as LoxCallable);
+  }
 
   interpret(stmts: Stmt[]): void {
     try {
@@ -111,6 +122,27 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
         this.checkNumberOperand(expr.operator, right);
         return -(right as number);
     }
+  }
+
+  visitCallExpr(expr: CallExpr): unknown {
+    const callee = this.evaluate(expr.callee);
+    const args = expr.args.map((a) => this.evaluate(a));
+
+    if (!isLoxCallable(callee)) {
+      throw new RuntimeError(
+        expr.paren,
+        'Can only call functions and classes.'
+      );
+    }
+
+    if (args.length != callee.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${callee.arity()} arguments but got ${args.length}.`
+      );
+    }
+
+    return callee.call(this, args);
   }
 
   visitAssignmentExpr(expr: AssignmentExpr): unknown {
