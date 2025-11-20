@@ -8,6 +8,7 @@ export interface StmtVisitor<R> {
   visitVarDeclStmt(stmt: VarDeclStmt): R;
   visitIfStmt(stmt: IfStmt): R;
   visitWhileStmt(stmt: WhileStmt): R;
+  visitFunctionStmt(stmt: FunctionStmt): R;
 }
 
 export abstract class Stmt {
@@ -97,5 +98,22 @@ export class WhileStmt extends Stmt {
 
   accept<R>(visitor: StmtVisitor<R>): R {
     return visitor.visitWhileStmt(this);
+  }
+}
+
+export class FunctionStmt extends Stmt {
+  name: Token;
+  params: Token[];
+  body: Stmt[];
+
+  constructor(name: Token, params: Token[], body: Stmt[]) {
+    super();
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitFunctionStmt(this);
   }
 }

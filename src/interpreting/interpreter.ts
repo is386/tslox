@@ -14,6 +14,7 @@ import {
 import {
   BlockStmt,
   ExpressionStmt,
+  FunctionStmt,
   IfStmt,
   PrintStmt,
   Stmt,
@@ -25,10 +26,11 @@ import { Token } from '../scanning/token';
 import { TokenType } from '../scanning/token-type';
 import { Environment } from './environment';
 import { isLoxCallable, LoxCallable } from './lox-callable';
+import { LoxFunction } from './lox-function';
 import { RuntimeError } from './runtime-error';
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
-  private globals = new Environment();
+  globals = new Environment();
   private environment = this.globals;
 
   constructor() {
@@ -48,6 +50,19 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
       if (e instanceof RuntimeError) {
         logError(e.token.line, e.message);
       }
+    }
+  }
+
+  executeBlock(stmts: Stmt[], environment: Environment): void {
+    const previous = this.environment;
+
+    try {
+      this.environment = environment;
+      stmts.forEach((s) => {
+        this.execute(s);
+      });
+    } finally {
+      this.environment = previous;
     }
   }
 
@@ -203,6 +218,10 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     }
   }
 
+  visitFunctionStmt(stmt: FunctionStmt): void {
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt));
+  }
+
   private execute(stmt: Stmt): void {
     stmt.accept(this);
   }
@@ -230,19 +249,6 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   ): void {
     if (typeof left !== 'number' || typeof right !== 'number') {
       throw new RuntimeError(operator, 'Operands must be numbers.');
-    }
-  }
-
-  private executeBlock(stmts: Stmt[], environment: Environment): void {
-    const previous = this.environment;
-
-    try {
-      this.environment = environment;
-      stmts.forEach((s) => {
-        this.execute(s);
-      });
-    } finally {
-      this.environment = previous;
     }
   }
 }

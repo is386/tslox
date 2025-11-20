@@ -15,6 +15,7 @@ import { logError } from '../error';
 import {
   BlockStmt,
   ExpressionStmt,
+  FunctionStmt,
   IfStmt,
   PrintStmt,
   Stmt,
@@ -67,10 +68,12 @@ export class Parser {
 
   private statement(): Stmt {
     if (this.match(TokenType.PRINT)) return this.printStatement();
-    if (this.match(TokenType.LEFT_BRACE)) return this.blockStatement();
+    if (this.match(TokenType.LEFT_BRACE))
+      return new BlockStmt(this.blockStatement());
     if (this.match(TokenType.IF)) return this.ifStatement();
     if (this.match(TokenType.WHILE)) return this.whileStatement();
     if (this.match(TokenType.FOR)) return this.forStatement();
+    if (this.match(TokenType.FUN)) return this.functionStatement('function');
 
     return this.expressionStatement();
   }
@@ -81,7 +84,7 @@ export class Parser {
     return new PrintStmt(expr);
   }
 
-  private blockStatement(): Stmt {
+  private blockStatement(): Stmt[] {
     const stmts = [];
 
     while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
@@ -93,7 +96,7 @@ export class Parser {
 
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
 
-    return new BlockStmt(stmts);
+    return stmts;
   }
 
   private expressionStatement(): Stmt {
@@ -115,6 +118,32 @@ export class Parser {
     }
 
     return new IfStmt(condition, thenBranch, elseBranch);
+  }
+
+  private functionStatement(kind: 'function'): Stmt {
+    const name = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
+    this.consume(TokenType.LEFT_PAREN, `Expect '(' after ${kind} name.`);
+
+    const parameters = [];
+
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        if (parameters.length >= 255) {
+          logError(this.peek().line, 'Cannot have more than 255 parameters.');
+        }
+
+        parameters.push(
+          this.consume(TokenType.IDENTIFIER, 'Expect parameter name')
+        );
+      } while (this.match(TokenType.COMMA));
+    }
+
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after '('.");
+
+    this.consume(TokenType.LEFT_BRACE, `Expect '{' before ${kind} body`);
+    const body = this.blockStatement();
+
+    return new FunctionStmt(name, parameters, body);
   }
 
   private whileStatement(): Stmt {
