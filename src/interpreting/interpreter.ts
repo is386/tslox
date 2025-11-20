@@ -17,6 +17,7 @@ import {
   FunctionStmt,
   IfStmt,
   PrintStmt,
+  ReturnStmt,
   Stmt,
   StmtVisitor,
   VarDeclStmt,
@@ -27,6 +28,7 @@ import { TokenType } from '../scanning/token-type';
 import { Environment } from './environment';
 import { isLoxCallable, LoxCallable } from './lox-callable';
 import { LoxFunction } from './lox-function';
+import { Return } from './return';
 import { RuntimeError } from './runtime-error';
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
@@ -220,6 +222,15 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
 
   visitFunctionStmt(stmt: FunctionStmt): void {
     this.environment.define(stmt.name.lexeme, new LoxFunction(stmt));
+  }
+
+  visitReturnStmt(stmt: ReturnStmt): void {
+    let value = null;
+    if (stmt.expr != null) {
+      value = this.evaluate(stmt.expr);
+    }
+
+    throw new Return(value);
   }
 
   private execute(stmt: Stmt): void {

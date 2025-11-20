@@ -2,6 +2,7 @@ import { FunctionStmt } from '../parsing/stmt';
 import { Environment } from './environment';
 import { Interpreter } from './interpreter';
 import { LoxCallable } from './lox-callable';
+import { Return } from './return';
 
 export class LoxFunction implements LoxCallable {
   private declaration: FunctionStmt;
@@ -17,7 +18,13 @@ export class LoxFunction implements LoxCallable {
       environment.define(p.lexeme, args[i]);
     });
 
-    interpreter.executeBlock(this.declaration.body, environment);
+    try {
+      interpreter.executeBlock(this.declaration.body, environment);
+    } catch (e) {
+      if (e instanceof Return) {
+        return e.value;
+      }
+    }
     return null;
   }
 

@@ -9,6 +9,7 @@ export interface StmtVisitor<R> {
   visitIfStmt(stmt: IfStmt): R;
   visitWhileStmt(stmt: WhileStmt): R;
   visitFunctionStmt(stmt: FunctionStmt): R;
+  visitReturnStmt(stmt: ReturnStmt): R;
 }
 
 export abstract class Stmt {
@@ -115,5 +116,20 @@ export class FunctionStmt extends Stmt {
 
   accept<R>(visitor: StmtVisitor<R>): R {
     return visitor.visitFunctionStmt(this);
+  }
+}
+
+export class ReturnStmt extends Stmt {
+  keyword: Token;
+  expr: Expr | null;
+
+  constructor(keyword: Token, expr: Expr | null) {
+    super();
+    this.keyword = keyword;
+    this.expr = expr;
+  }
+
+  accept<R>(visitor: StmtVisitor<R>): R {
+    return visitor.visitReturnStmt(this);
   }
 }

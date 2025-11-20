@@ -18,6 +18,7 @@ import {
   FunctionStmt,
   IfStmt,
   PrintStmt,
+  ReturnStmt,
   Stmt,
   VarDeclStmt,
   WhileStmt,
@@ -74,6 +75,7 @@ export class Parser {
     if (this.match(TokenType.WHILE)) return this.whileStatement();
     if (this.match(TokenType.FOR)) return this.forStatement();
     if (this.match(TokenType.FUN)) return this.functionStatement('function');
+    if (this.match(TokenType.RETURN)) return this.returnStatement();
 
     return this.expressionStatement();
   }
@@ -144,6 +146,19 @@ export class Parser {
     const body = this.blockStatement();
 
     return new FunctionStmt(name, parameters, body);
+  }
+
+  private returnStatement(): Stmt {
+    const keyword = this.peekPrevious();
+
+    let expr = null;
+    if (!this.check(TokenType.SEMICOLON)) {
+      expr = this.expression();
+    }
+
+    this.consume(TokenType.SEMICOLON, "Expect ';' after return value.");
+
+    return new ReturnStmt(keyword, expr);
   }
 
   private whileStatement(): Stmt {

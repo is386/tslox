@@ -29,6 +29,7 @@ function main(): void {
     'If         # condition: Expr, thenBranch: Stmt, elseBranch: Stmt | null',
     'While      # condition: Expr, body: Stmt',
     'Function   # name: Token, params: Token[], body: Stmt[]',
+    'Return     # keyword: Token, expr: Expr | null',
   ]);
 }
 
