@@ -5,6 +5,7 @@ import { clearError, hadError } from './error';
 import { Scanner } from './scanning/scanner';
 import { Parser } from './parsing/parser';
 import { Interpreter } from './interpreting/interpreter';
+import { Resolver } from './resolving/resolver';
 
 const interpreter = new Interpreter();
 
@@ -53,6 +54,11 @@ function run(source: string): void {
 
   const parser = new Parser(tokens);
   const stmts = parser.parse();
+
+  if (hadError()) return;
+
+  const resolver = new Resolver(interpreter);
+  resolver.resolveList(stmts);
 
   if (hadError()) return;
 

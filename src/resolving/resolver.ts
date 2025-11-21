@@ -1,0 +1,196 @@
+import { Interpreter } from '../interpreting/interpreter';
+import {
+  AssignmentExpr,
+  BinaryExpr,
+  CallExpr,
+  Expr,
+  ExprVisitor,
+  GroupingExpr,
+  LiteralExpr,
+  LogicalExpr,
+  UnaryExpr,
+  VariableExpr,
+} from '../parsing/expr';
+import {
+  BlockStmt,
+  ExpressionStmt,
+  FunctionStmt,
+  IfStmt,
+  PrintStmt,
+  ReturnStmt,
+  Stmt,
+  StmtVisitor,
+  VarDeclStmt,
+  WhileStmt,
+} from '../parsing/stmt';
+import { Token } from '../scanning/token';
+import { logError } from '../error';
+
+enum FunctionType {
+  NONE,
+  FUNCTION,
+}
+
+export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
+  private interpreter: Interpreter;
+  private scopes: Record<string, boolean>[] = [];
+  private currentFunction: FunctionType = FunctionType.NONE;
+
+  constructor(interpreter: Interpreter) {
+    this.interpreter = interpreter;
+  }
+
+  resolveList(x: Stmt[] | Expr[]): void {
+    x.forEach((y) => this.resolve(y));
+  }
+
+  visitBlockStmt(stmt: BlockStmt): void {
+    this.beginScope();
+    this.resolveList(stmt.stmts);
+    this.endScope();
+  }
+
+  visitVarDeclStmt(stmt: VarDeclStmt): void {
+    this.declare(stmt.name);
+    if (stmt.initializer !== null) {
+      this.resolve(stmt.initializer);
+    }
+    this.define(stmt.name);
+  }
+
+  visitFunctionStmt(stmt: FunctionStmt): void {
+    this.declare(stmt.name);
+    this.define(stmt.name);
+    this.resolveFunction(stmt, FunctionType.FUNCTION);
+  }
+
+  visitVariableExpr(expr: VariableExpr): void {
+    const scope = this.scopes[this.scopes.length - 1];
+
+    if (this.scopes.length > 0 && scope[expr.name.lexeme] === false) {
+      logError(
+        expr.name.line,
+        "Can't read local variable in its own initializer"
+      );
+    }
+
+    this.resolveLocal(expr, expr.name);
+  }
+
+  visitAssignmentExpr(expr: AssignmentExpr): void {
+    this.resolve(expr.value);
+    this.resolveLocal(expr, expr.name);
+  }
+
+  visitExpressionStmt(stmt: ExpressionStmt): void {
+    this.resolve(stmt);
+  }
+
+  visitPrintStmt(stmt: PrintStmt): void {
+    this.resolve(stmt);
+  }
+
+  visitIfStmt(stmt: IfStmt): void {
+    this.resolve(stmt.condition);
+    this.resolve(stmt.thenBranch);
+    if (stmt.elseBranch !== null) this.resolve(stmt.elseBranch);
+  }
+
+  visitWhileStmt(stmt: WhileStmt): void {
+    this.resolve(stmt.condition);
+    this.resolve(stmt.body);
+  }
+
+  visitReturnStmt(stmt: ReturnStmt): void {
+    if (this.currentFunction == FunctionType.NONE) {
+      logError(stmt.keyword.line, "Can't return from top-level code.");
+    }
+
+    if (stmt.expr !== null) {
+      this.resolve(stmt.expr);
+    }
+  }
+
+  visitBinaryExpr(expr: BinaryExpr): void {
+    this.resolve(expr.left);
+    this.resolve(expr.right);
+  }
+
+  visitLogicalExpr(expr: LogicalExpr): void {
+    this.resolve(expr.left);
+    this.resolve(expr.right);
+  }
+
+  visitGroupingExpr(expr: GroupingExpr): void {
+    this.resolve(expr.expression);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  visitLiteralExpr(expr: LiteralExpr): void {}
+
+  visitUnaryExpr(expr: UnaryExpr): void {
+    this.resolve(expr.right);
+  }
+
+  visitCallExpr(expr: CallExpr): void {
+    this.resolve(expr.callee);
+    expr.args.forEach((a) => this.resolve(a));
+  }
+
+  private resolve(x: Stmt | Expr): void {
+    x.accept(this);
+  }
+
+  private resolveLocal(expr: Expr, name: Token): void {
+    for (let i = this.scopes.length - 1; i >= 0; i--) {
+      if (this.scopes[i][name.lexeme]) {
+        this.interpreter.resolve(expr, this.scopes.length - 1 - i);
+        return;
+      }
+    }
+  }
+
+  private resolveFunction(func: FunctionStmt, funcType: FunctionType): void {
+    const enclosingFunction = this.currentFunction;
+    this.currentFunction = funcType;
+
+    this.beginScope();
+
+    func.params.forEach((p) => {
+      this.declare(p);
+      this.define(p);
+    });
+
+    this.resolveList(func.body);
+
+    this.endScope();
+    this.currentFunction = enclosingFunction;
+  }
+
+  private beginScope(): void {
+    this.scopes.push({});
+  }
+
+  private endScope(): void {
+    this.scopes.pop();
+  }
+
+  private declare(name: Token): void {
+    if (this.scopes.length === 0) return;
+
+    const scope = this.scopes[this.scopes.length - 1];
+
+    if (scope[name.lexeme]) {
+      logError(name.line, 'Already a variable with this name in this scope.');
+    }
+
+    scope[name.lexeme] = false;
+  }
+
+  private define(name: Token): void {
+    if (this.scopes.length === 0) return;
+
+    const scope = this.scopes[this.scopes.length - 1];
+    scope[name.lexeme] = true;
+  }
+}

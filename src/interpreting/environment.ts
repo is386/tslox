@@ -25,6 +25,10 @@ export class Environment {
     throw new RuntimeError(name, `Undefined variable "${name.lexeme}".`);
   }
 
+  getAt(distance: number, name: string): unknown {
+    return this.ancestor(distance).values[name];
+  }
+
   assign(name: Token, value: unknown): void {
     if (this.exists(name)) {
       this.values[name.lexeme] = value;
@@ -39,7 +43,21 @@ export class Environment {
     throw new RuntimeError(name, `Undefined variable "${name.lexeme}".`);
   }
 
+  assignAt(distance: number, name: Token, value: unknown): void {
+    this.ancestor(distance).values[name.lexeme] = value;
+  }
+
   private exists(name: Token): boolean {
     return Object.keys(this.values).includes(name.lexeme);
+  }
+
+  private ancestor(distance: number): Environment {
+    let environment = this as Environment;
+    for (let i = 0; i < distance; i++) {
+      if (environment.enclosing) {
+        environment = environment.enclosing;
+      }
+    }
+    return environment;
   }
 }

@@ -34,6 +34,7 @@ import { RuntimeError } from './runtime-error';
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   globals = new Environment();
   private environment = this.globals;
+  private locals = new Map<Expr, number>();
 
   constructor() {
     this.globals.define('clock', {
@@ -66,6 +67,10 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     } finally {
       this.environment = previous;
     }
+  }
+
+  resolve(expr: Expr, depth: number): void {
+    this.locals.set(expr, depth);
   }
 
   visitBinaryExpr(expr: BinaryExpr): unknown {
@@ -164,12 +169,19 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
 
   visitAssignmentExpr(expr: AssignmentExpr): unknown {
     const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
+
     return value;
   }
 
   visitVariableExpr(expr: VariableExpr): unknown {
-    return this.environment.get(expr.name);
+    return this.lookUpVariable(expr.name, expr);
   }
 
   visitLogicalExpr(expr: LogicalExpr): unknown {
@@ -264,5 +276,13 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     if (typeof left !== 'number' || typeof right !== 'number') {
       throw new RuntimeError(operator, 'Operands must be numbers.');
     }
+  }
+
+  private lookUpVariable(name: Token, expr: Expr): unknown {
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name.lexeme);
+    }
+    return this.globals.get(name);
   }
 }
