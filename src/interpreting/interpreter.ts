@@ -10,9 +10,12 @@ import {
   AssignmentExpr,
   LogicalExpr,
   CallExpr,
+  GetExpr,
+  SetExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
+  ClassStmt,
   ExpressionStmt,
   FunctionStmt,
   IfStmt,
@@ -27,7 +30,9 @@ import { Token } from '../scanning/token';
 import { TokenType } from '../scanning/token-type';
 import { Environment } from './environment';
 import { isLoxCallable, LoxCallable } from './lox-callable';
+import { LoxClass } from './lox-class';
 import { LoxFunction } from './lox-function';
+import { LoxInstance } from './lox-instance';
 import { Return } from './return';
 import { RuntimeError } from './runtime-error';
 
@@ -196,13 +201,51 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     return this.evaluate(expr.right);
   }
 
+  visitGetExpr(expr: GetExpr): unknown {
+    const object = this.evaluate(expr.object);
+    if (object instanceof LoxInstance) {
+      return object.get(expr.name);
+    }
+
+    throw new RuntimeError(expr.name, 'Only instances have properties.');
+  }
+
+  visitSetExpr(expr: SetExpr): unknown {
+    const object = this.evaluate(expr.object);
+    if (!(object instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, 'Only instances have fields.');
+    }
+
+    const value = this.evaluate(expr.value);
+    object.set(expr.name, value);
+
+    return value;
+  }
+
   visitExpressionStmt(stmt: ExpressionStmt): void {
     this.evaluate(stmt.expr);
   }
 
   visitPrintStmt(stmt: PrintStmt): void {
     const value = this.evaluate(stmt.expr);
-    console.log(JSON.stringify(value));
+
+    let output: string;
+
+    if (
+      value &&
+      typeof value.toString === 'function' &&
+      value.toString !== Object.prototype.toString
+    ) {
+      output = value.toString();
+    } else {
+      try {
+        output = JSON.stringify(value);
+      } catch {
+        output = String(value);
+      }
+    }
+
+    console.log(output);
   }
 
   visitBlockStmt(stmt: BlockStmt): void {
@@ -246,6 +289,12 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     }
 
     throw new Return(value);
+  }
+
+  visitClassStmt(stmt: ClassStmt): void {
+    this.environment.define(stmt.name.lexeme, null);
+    const loxClass = new LoxClass(stmt.name.lexeme);
+    this.environment.assign(stmt.name, loxClass);
   }
 
   private execute(stmt: Stmt): void {

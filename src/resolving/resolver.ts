@@ -5,14 +5,17 @@ import {
   CallExpr,
   Expr,
   ExprVisitor,
+  GetExpr,
   GroupingExpr,
   LiteralExpr,
   LogicalExpr,
+  SetExpr,
   UnaryExpr,
   VariableExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
+  ClassStmt,
   ExpressionStmt,
   FunctionStmt,
   IfStmt,
@@ -83,11 +86,11 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   visitExpressionStmt(stmt: ExpressionStmt): void {
-    this.resolve(stmt);
+    this.resolve(stmt.expr);
   }
 
   visitPrintStmt(stmt: PrintStmt): void {
-    this.resolve(stmt);
+    this.resolve(stmt.expr);
   }
 
   visitIfStmt(stmt: IfStmt): void {
@@ -109,6 +112,20 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     if (stmt.expr !== null) {
       this.resolve(stmt.expr);
     }
+  }
+
+  visitClassStmt(stmt: ClassStmt): void {
+    this.declare(stmt.name);
+    this.define(stmt.name);
+  }
+
+  visitSetExpr(expr: SetExpr): void {
+    this.resolve(expr.value);
+    this.resolve(expr.object);
+  }
+
+  visitGetExpr(expr: GetExpr): void {
+    this.resolve(expr.object);
   }
 
   visitBinaryExpr(expr: BinaryExpr): void {

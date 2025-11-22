@@ -4,9 +4,11 @@ import {
   BinaryExpr,
   CallExpr,
   Expr,
+  GetExpr,
   GroupingExpr,
   LiteralExpr,
   LogicalExpr,
+  SetExpr,
   UnaryExpr,
   VariableExpr,
 } from './expr';
@@ -14,6 +16,7 @@ import { TokenType } from '../scanning/token-type';
 import { logError } from '../error';
 import {
   BlockStmt,
+  ClassStmt,
   ExpressionStmt,
   FunctionStmt,
   IfStmt,
@@ -76,6 +79,7 @@ export class Parser {
     if (this.match(TokenType.FOR)) return this.forStatement();
     if (this.match(TokenType.FUN)) return this.functionStatement('function');
     if (this.match(TokenType.RETURN)) return this.returnStatement();
+    if (this.match(TokenType.CLASS)) return this.classStatement();
 
     return this.expressionStatement();
   }
@@ -122,7 +126,7 @@ export class Parser {
     return new IfStmt(condition, thenBranch, elseBranch);
   }
 
-  private functionStatement(kind: 'function'): Stmt {
+  private functionStatement(kind: 'function' | 'method'): Stmt {
     const name = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
     this.consume(TokenType.LEFT_PAREN, `Expect '(' after ${kind} name.`);
 
@@ -214,6 +218,20 @@ export class Parser {
     return body;
   }
 
+  private classStatement(): Stmt {
+    const name = this.consume(TokenType.IDENTIFIER, 'Expect class name.');
+    this.consume(TokenType.LEFT_BRACE, "Expect '{' after class name.");
+
+    const methods = [];
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      methods.push(this.functionStatement('method') as FunctionStmt);
+    }
+
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after '{.");
+
+    return new ClassStmt(name, methods);
+  }
+
   private expression(): Expr {
     return this.assignment();
   }
@@ -228,6 +246,8 @@ export class Parser {
       if (expr instanceof VariableExpr) {
         const name = expr.name;
         return new AssignmentExpr(name, value);
+      } else if (expr instanceof GetExpr) {
+        return new SetExpr(expr.object, expr.name, value);
       }
 
       logError(equal.line, 'Invalid assignment target.');
@@ -331,6 +351,12 @@ export class Parser {
     while (true) {
       if (this.match(TokenType.LEFT_PAREN)) {
         expr = this.finishCall(expr);
+      } else if (this.match(TokenType.DOT)) {
+        const name = this.consume(
+          TokenType.IDENTIFIER,
+          "Expect property name after '.'."
+        );
+        expr = new GetExpr(expr, name);
       } else {
         break;
       }

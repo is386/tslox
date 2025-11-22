@@ -19,6 +19,8 @@ function main(): void {
     'Variable   # name: Token',
     'Assignment # name: Token, value: Expr',
     'Call       # callee: Expr, paren: Token, args: Expr[]',
+    'Get        # object: Expr, name: Token',
+    'Set        # object: Expr, name: Token, value: Expr',
   ]);
 
   defineAst(args[2], 'Stmt', [
@@ -30,6 +32,7 @@ function main(): void {
     'While      # condition: Expr, body: Stmt',
     'Function   # name: Token, params: Token[], body: Stmt[]',
     'Return     # keyword: Token, expr: Expr | null',
+    'Class      # name: Token, methods: FunctionStmt[]',
   ]);
 }
 
