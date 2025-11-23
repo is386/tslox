@@ -31,7 +31,7 @@ This is an interpreter for the Lox langauage developed in Typescript. I created 
 
 ### Input
 
-```c
+```cpp
 class Doughnut {
   cook() {
     print "Fry until golden brown.";
