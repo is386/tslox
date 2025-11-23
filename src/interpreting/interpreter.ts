@@ -293,8 +293,15 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
 
   visitClassStmt(stmt: ClassStmt): void {
     this.environment.define(stmt.name.lexeme, null);
-    const loxClass = new LoxClass(stmt.name.lexeme);
-    this.environment.assign(stmt.name, loxClass);
+
+    const methods: Record<string, LoxFunction> = {};
+    stmt.methods.forEach((m) => {
+      const func = new LoxFunction(m, this.environment);
+      methods[m.name.lexeme] = func;
+    });
+
+    const klass = new LoxClass(stmt.name.lexeme, methods);
+    this.environment.assign(stmt.name, klass);
   }
 
   private execute(stmt: Stmt): void {

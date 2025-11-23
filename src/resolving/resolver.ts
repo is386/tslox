@@ -32,6 +32,7 @@ import { logError } from '../error';
 enum FunctionType {
   NONE,
   FUNCTION,
+  METHOD,
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
@@ -116,6 +117,12 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
 
   visitClassStmt(stmt: ClassStmt): void {
     this.declare(stmt.name);
+
+    stmt.methods.forEach((m) => {
+      const declaration = FunctionType.METHOD;
+      this.resolveFunction(m, declaration);
+    });
+
     this.define(stmt.name);
   }
 
