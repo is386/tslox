@@ -21,6 +21,7 @@ function main(): void {
     'Call       # callee: Expr, paren: Token, args: Expr[]',
     'Get        # object: Expr, name: Token',
     'Set        # object: Expr, name: Token, value: Expr',
+    'This       # keyword: Token',
   ]);
 
   defineAst(args[2], 'Stmt', [

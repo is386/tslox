@@ -9,6 +9,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  ThisExpr,
   UnaryExpr,
   VariableExpr,
 } from './expr';
@@ -407,6 +408,8 @@ export class Parser {
       this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
       return new GroupingExpr(expr);
     }
+
+    if (this.match(TokenType.THIS)) return new ThisExpr(this.peekPrevious());
 
     if (this.match(TokenType.IDENTIFIER)) {
       return new VariableExpr(this.peekPrevious());

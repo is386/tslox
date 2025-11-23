@@ -12,6 +12,7 @@ import {
   CallExpr,
   GetExpr,
   SetExpr,
+  ThisExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
@@ -222,6 +223,10 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     return value;
   }
 
+  visitThisExpr(expr: ThisExpr): unknown {
+    return this.lookUpVariable(expr.keyword, expr);
+  }
+
   visitExpressionStmt(stmt: ExpressionStmt): void {
     this.evaluate(stmt.expr);
   }
@@ -278,7 +283,7 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   visitFunctionStmt(stmt: FunctionStmt): void {
     this.environment.define(
       stmt.name.lexeme,
-      new LoxFunction(stmt, this.environment)
+      new LoxFunction(stmt, this.environment, false)
     );
   }
 
@@ -296,7 +301,11 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
 
     const methods: Record<string, LoxFunction> = {};
     stmt.methods.forEach((m) => {
-      const func = new LoxFunction(m, this.environment);
+      const func = new LoxFunction(
+        m,
+        this.environment,
+        m.name.lexeme === 'init'
+      );
       methods[m.name.lexeme] = func;
     });
 

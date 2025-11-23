@@ -10,6 +10,7 @@ export interface ExprVisitor<R> {
   visitCallExpr(expr: CallExpr): R;
   visitGetExpr(expr: GetExpr): R;
   visitSetExpr(expr: SetExpr): R;
+  visitThisExpr(expr: ThisExpr): R;
 }
 
 export abstract class Expr {
@@ -165,5 +166,18 @@ export class SetExpr extends Expr {
 
   accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitSetExpr(this);
+  }
+}
+
+export class ThisExpr extends Expr {
+  keyword: Token;
+
+  constructor(keyword: Token) {
+    super();
+    this.keyword = keyword;
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitThisExpr(this);
   }
 }

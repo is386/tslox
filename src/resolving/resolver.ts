@@ -10,6 +10,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  ThisExpr,
   UnaryExpr,
   VariableExpr,
 } from '../parsing/expr';
@@ -33,12 +34,19 @@ enum FunctionType {
   NONE,
   FUNCTION,
   METHOD,
+  INITIALIZER,
+}
+
+enum ClassType {
+  NONE,
+  CLASS,
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   private interpreter: Interpreter;
   private scopes: Record<string, boolean>[] = [];
   private currentFunction: FunctionType = FunctionType.NONE;
+  private currentClass: ClassType = ClassType.NONE;
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter;
@@ -111,19 +119,39 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     }
 
     if (stmt.expr !== null) {
+      if (this.currentFunction == FunctionType.INITIALIZER) {
+        logError(
+          stmt.keyword.line,
+          "Can't return a value from an initializer."
+        );
+      }
       this.resolve(stmt.expr);
     }
   }
 
   visitClassStmt(stmt: ClassStmt): void {
+    const enclosingClass = this.currentClass;
+    this.currentClass = ClassType.CLASS;
+
     this.declare(stmt.name);
+    this.define(stmt.name);
+
+    this.beginScope();
+    this.scopes[this.scopes.length - 1]['this'] = true;
 
     stmt.methods.forEach((m) => {
-      const declaration = FunctionType.METHOD;
+      let declaration = FunctionType.METHOD;
+
+      if (m.name.lexeme === 'init') {
+        declaration = FunctionType.INITIALIZER;
+      }
+
       this.resolveFunction(m, declaration);
     });
 
-    this.define(stmt.name);
+    this.endScope();
+
+    this.currentClass = enclosingClass;
   }
 
   visitSetExpr(expr: SetExpr): void {
@@ -159,6 +187,15 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   visitCallExpr(expr: CallExpr): void {
     this.resolve(expr.callee);
     expr.args.forEach((a) => this.resolve(a));
+  }
+
+  visitThisExpr(expr: ThisExpr): void {
+    if (this.currentClass == ClassType.NONE) {
+      logError(expr.keyword.line, "Can't use 'this' outside of a class.");
+      return;
+    }
+
+    this.resolveLocal(expr, expr.keyword);
   }
 
   private resolve(x: Stmt | Expr): void {
