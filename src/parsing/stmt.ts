@@ -137,11 +137,17 @@ export class ReturnStmt extends Stmt {
 
 export class ClassStmt extends Stmt {
   name: Token;
+  superclass: VariableExpr | null;
   methods: FunctionStmt[];
 
-  constructor(name: Token, methods: FunctionStmt[]) {
+  constructor(
+    name: Token,
+    superclass: VariableExpr | null,
+    methods: FunctionStmt[]
+  ) {
     super();
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 

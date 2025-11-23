@@ -9,6 +9,7 @@ import {
   LiteralExpr,
   LogicalExpr,
   SetExpr,
+  SuperExpr,
   ThisExpr,
   UnaryExpr,
   VariableExpr,
@@ -221,6 +222,13 @@ export class Parser {
 
   private classStatement(): Stmt {
     const name = this.consume(TokenType.IDENTIFIER, 'Expect class name.');
+
+    let superclass = null;
+    if (this.match(TokenType.LESS)) {
+      this.consume(TokenType.IDENTIFIER, 'Expect superclass name.');
+      superclass = new VariableExpr(this.peekPrevious());
+    }
+
     this.consume(TokenType.LEFT_BRACE, "Expect '{' after class name.");
 
     const methods = [];
@@ -230,7 +238,7 @@ export class Parser {
 
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after '{.");
 
-    return new ClassStmt(name, methods);
+    return new ClassStmt(name, superclass, methods);
   }
 
   private expression(): Expr {
@@ -407,6 +415,16 @@ export class Parser {
       const expr = this.expression();
       this.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
       return new GroupingExpr(expr);
+    }
+
+    if (this.match(TokenType.SUPER)) {
+      const keyword = this.peekPrevious();
+      this.consume(TokenType.DOT, "Expect '.' after 'super'.");
+      const method = this.consume(
+        TokenType.IDENTIFIER,
+        'Expect superclass method name.'
+      );
+      return new SuperExpr(keyword, method);
     }
 
     if (this.match(TokenType.THIS)) return new ThisExpr(this.peekPrevious());

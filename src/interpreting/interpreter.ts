@@ -13,6 +13,7 @@ import {
   GetExpr,
   SetExpr,
   ThisExpr,
+  SuperExpr,
 } from '../parsing/expr';
 import {
   BlockStmt,
@@ -39,7 +40,7 @@ import { RuntimeError } from './runtime-error';
 
 export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   globals = new Environment();
-  private environment = this.globals;
+  private environment: Environment = this.globals;
   private locals = new Map<Expr, number>();
 
   constructor() {
@@ -227,6 +228,22 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
     return this.lookUpVariable(expr.keyword, expr);
   }
 
+  visitSuperExpr(expr: SuperExpr): unknown {
+    const distance = this.locals.get(expr) ?? 0;
+    const superclass = this.environment.getAt(distance, 'super') as LoxClass;
+    const object = this.environment.getAt(distance - 1, 'this') as LoxInstance;
+    const method = superclass.findMethod(expr.method.lexeme) as LoxFunction;
+
+    if (method === null) {
+      throw new RuntimeError(
+        expr.method,
+        "Undefined property '" + expr.method.lexeme + "'."
+      );
+    }
+
+    return method.bind(object);
+  }
+
   visitExpressionStmt(stmt: ExpressionStmt): void {
     this.evaluate(stmt.expr);
   }
@@ -297,7 +314,23 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
   }
 
   visitClassStmt(stmt: ClassStmt): void {
+    let superclass = null;
+    if (stmt.superclass !== null) {
+      superclass = this.evaluate(stmt.superclass);
+      if (!(superclass instanceof LoxClass)) {
+        throw new RuntimeError(
+          stmt.superclass.name,
+          'Superclass must be a class.'
+        );
+      }
+    }
+
     this.environment.define(stmt.name.lexeme, null);
+
+    if (stmt.superclass !== null) {
+      this.environment = new Environment(this.environment);
+      this.environment.define('super', superclass);
+    }
 
     const methods: Record<string, LoxFunction> = {};
     stmt.methods.forEach((m) => {
@@ -309,7 +342,12 @@ export class Interpreter implements ExprVisitor<unknown>, StmtVisitor<void> {
       methods[m.name.lexeme] = func;
     });
 
-    const klass = new LoxClass(stmt.name.lexeme, methods);
+    const klass = new LoxClass(stmt.name.lexeme, superclass, methods);
+
+    if (superclass != null) {
+      this.environment = this.environment.enclosing as Environment;
+    }
+
     this.environment.assign(stmt.name, klass);
   }
 

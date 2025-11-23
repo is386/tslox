@@ -5,10 +5,16 @@ import { LoxInstance } from './lox-instance';
 
 export class LoxClass implements LoxCallable {
   name: string;
+  superclass: LoxClass | null;
   private methods: Record<string, LoxFunction>;
 
-  constructor(name: string, methods: Record<string, LoxFunction>) {
+  constructor(
+    name: string,
+    superclass: LoxClass | null,
+    methods: Record<string, LoxFunction>
+  ) {
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 
@@ -30,7 +36,15 @@ export class LoxClass implements LoxCallable {
   }
 
   findMethod(name: string): LoxFunction | null {
-    return this.methods[name] ?? null;
+    if (this.methods[name]) {
+      return this.methods[name];
+    }
+
+    if (this.superclass !== null) {
+      return this.superclass.findMethod(name);
+    }
+
+    return null;
   }
 
   toString(): string {

@@ -11,6 +11,7 @@ export interface ExprVisitor<R> {
   visitGetExpr(expr: GetExpr): R;
   visitSetExpr(expr: SetExpr): R;
   visitThisExpr(expr: ThisExpr): R;
+  visitSuperExpr(expr: SuperExpr): R;
 }
 
 export abstract class Expr {
@@ -179,5 +180,20 @@ export class ThisExpr extends Expr {
 
   accept<R>(visitor: ExprVisitor<R>): R {
     return visitor.visitThisExpr(this);
+  }
+}
+
+export class SuperExpr extends Expr {
+  keyword: Token;
+  method: Token;
+
+  constructor(keyword: Token, method: Token) {
+    super();
+    this.keyword = keyword;
+    this.method = method;
+  }
+
+  accept<R>(visitor: ExprVisitor<R>): R {
+    return visitor.visitSuperExpr(this);
   }
 }
