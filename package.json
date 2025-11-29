@@ -2,7 +2,7 @@
   "name": "tslox",
   "version": "1.0.0",
   "description": "Lox interpreter written in Typescript",
-  "repository": "git@github.com:is386/pokemon-smackdown.git",
+  "repository": "git@github.com:is386/tslox.git",
   "author": "is386 <singh.indervir89@gmail.com>",
   "license": "UNLICENSED",
   "private": true,
